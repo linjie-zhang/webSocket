@@ -1,3 +1,39 @@
+##### （1）maven依赖
+
+```
+<dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-websocket</artifactId>
+</dependency>
+```
+
+#### （2）WebSocket配置类
+
+```
+package org.jeecg.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.socket.server.standard.ServerEndpointExporter;
+
+@Configuration
+public class WebSocketConfig {
+    /**
+     * 	注入ServerEndpointExporter，
+     * 	这个bean会自动注册使用了@ServerEndpoint注解声明的Websocket endpoint
+     */
+    @Bean
+    public ServerEndpointExporter serverEndpointExporter() {
+        return new ServerEndpointExporter();
+    }
+    
+}
+```
+
+#### WebSocket操作类
+
+> 通过该类WebSocket可以进行群推送以及单点推送
+
 ```
 package org.jeecg.modules.message.websocket;
 
@@ -177,4 +213,58 @@ public class WebSocket {
     //=======【采用redis发布订阅模式——推送消息】==========================================================================================
     
 }
+```
+
+### 前端中VUE使用WebSocket
+
+```
+<script>
+    import store from '@/store/'
+
+    export default {
+        data() {
+            return {
+            }
+        },
+        mounted() { 
+              //初始化websocket
+              this.initWebSocket()
+        },
+        destroyed: function () { // 离开页面生命周期函数
+              this.websocketclose();
+        },
+        methods: {
+            initWebSocket: function () {
+                // WebSocket与普通的请求所用协议有所不同，ws等同于http，wss等同于https
+                var userId = store.getters.userInfo.id;
+                var url = window._CONFIG['domianURL'].replace("https://","ws://").replace("http://","ws://")+"/websocket/"+userId;
+                this.websock = new WebSocket(url);
+                this.websock.onopen = this.websocketonopen;
+                this.websock.onerror = this.websocketonerror;
+                this.websock.onmessage = this.websocketonmessage;
+                this.websock.onclose = this.websocketclose;
+              },
+              websocketonopen: function () {
+                console.log("WebSocket连接成功");
+              },
+              websocketonerror: function (e) {
+                console.log("WebSocket连接发生错误");
+              },
+              websocketonmessage: function (e) {
+                var data = eval("(" + e.data + ")"); 
+                 //处理订阅信息
+                if(data.cmd == "topic"){
+                   //TODO 系统通知
+             
+                }else if(data.cmd == "user"){
+                   //TODO 用户消息
+        
+                }
+              },
+              websocketclose: function (e) {
+                console.log("connection closed (" + e.code + ")");
+              }
+        }
+    }
+</script>
 ```
